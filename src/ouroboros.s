@@ -83,6 +83,14 @@ FT_DPCM_OFF=$c000
 skip:  
 .endmacro
 
+.macro DEX_MOD_16
+  .local skip
+  DEX
+  BPL skip
+  LDX #15
+skip:
+.endmacro
+
 ; game config
 
 STEP_THETA = 2
@@ -666,7 +674,7 @@ no_step:
   LDA #0
   STA sprite_counter
 
-  LDX snake_queue_tail
+  LDX snake_queue_head
 render_snake_loop:
   LDA snake_rho_queue, X
   STA sprite_rho
@@ -677,9 +685,9 @@ render_snake_loop:
   STA sprite_flag
 
   JSR draw_polar_sprite
-  CPX snake_queue_head
+  CPX snake_queue_tail
   BEQ exit_render_snake_loop
-  INX_MOD_16
+  DEX_MOD_16
   JMP render_snake_loop
 exit_render_snake_loop:
   RTS
