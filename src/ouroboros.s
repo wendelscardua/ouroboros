@@ -116,6 +116,11 @@ sprite_counter: .res 1
 theta: .res 1
 rho: .res 1
 
+sprite_rho: .res 1
+sprite_theta: .res 1
+sprite_tile: .res 1
+sprite_flag: .res 1
+
 temp_x: .res 1
 temp_y: .res 1
 
@@ -572,8 +577,26 @@ no_right:
 
   INC theta
 
-  LDX rho
-  LDY theta
+  LDA #0
+  STA sprite_counter
+
+  LDA rho
+  STA sprite_rho
+  LDA theta
+  STA sprite_theta
+  LDA #0
+  STA sprite_tile
+  STA sprite_flag
+
+  JSR draw_polar_sprite
+  
+  RTS
+.endproc
+
+.proc draw_polar_sprite
+  ; input: sprite_rho, sprite_theta, sprite_tile, sprite_flag
+  LDX sprite_rho
+  LDY sprite_theta
   
   LDA circle_lut_x_ptr_l, X
   STA addr_ptr
@@ -595,23 +618,22 @@ no_right:
   SBC #4
   STA temp_y
 
-
-  LDX #$00
+  LDX sprite_counter
 
   LDA temp_x
   STA oam_sprites+Sprite::xcoord, X
   LDA temp_y
   STA oam_sprites+Sprite::ycoord, X
-  LDA #0
+  LDA sprite_tile
   STA oam_sprites+Sprite::tile, X
-  LDA #2
+  LDA sprite_flag
   STA oam_sprites+Sprite::flag, X
   .repeat .sizeof(Sprite)
   INX
   .endrepeat
 
   STX sprite_counter
-  
+
   RTS
 .endproc
 
