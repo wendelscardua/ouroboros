@@ -283,10 +283,6 @@ forever:
   JSR refresh_oam
   ; reset ppuaddr
   BIT PPUSTATUS
-  LDA #$20
-  STA PPUADDR
-  LDA #$00
-  STA PPUADDR
   ; reset scroll
   LDA #$00
   STA PPUSCROLL
