@@ -466,8 +466,12 @@ etc:
   INC theta
   LDX theta
   LDA circle_x_lut, X
+  SEC
+  SBC #4
   STA temp_x
   LDA circle_y_lut, X
+  SEC
+  SBC #4
   STA temp_y
 
   LDX #$00

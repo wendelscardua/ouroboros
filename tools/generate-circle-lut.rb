@@ -1,9 +1,9 @@
 #!/usr/bin/ruby
 # frozen_string_literal: true
 
-RADIUS = 0x68
+RADIUS = 0x70
 X_CENTER = 0x80
-Y_CENTER = 0x70
+Y_CENTER = 0x78
 
 coords = (0...256).map do |i|
   fraction = 2 * Math::PI * i / 256.0
