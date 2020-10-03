@@ -680,8 +680,38 @@ render_snake_loop:
   STA sprite_rho
   LDA snake_theta_queue, X
   STA sprite_theta
-  LDA #0
+  CPX snake_queue_head
+  BNE @no_head
+  LDA sprite_theta
+  LSR
+  LSR
+  LSR
+  LSR
   STA sprite_tile
+  JMP @set_flag
+@no_head:
+  CPX snake_queue_tail
+  BNE @no_tail
+  LDA sprite_theta
+  LSR
+  LSR
+  LSR
+  LSR
+  CLC
+  ADC #$20
+  STA sprite_tile
+  JMP @set_flag
+@no_tail:
+  LDA sprite_theta
+  LSR
+  LSR
+  LSR
+  LSR
+  CLC
+  ADC #$10
+  STA sprite_tile
+@set_flag:
+  LDA #0
   STA sprite_flag
 
   JSR draw_polar_sprite
