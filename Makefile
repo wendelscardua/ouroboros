@@ -42,6 +42,9 @@ assets/audio/sfx.nsf: assets/audio/sfx.ftm
 assets/audio/sfx.s: assets/audio/sfx.nsf
 	${NSF2DATA} assets/audio/sfx.nsf -ca65 -ntsc
 
+assets/nametables/main.rle: tools/rle.rb assets/nametables/main.s
+	ruby tools/rle.rb assets/nametables/main.s assets/nametables/main.rle
+
 src/circle-lut.inc: tools/generate-circle-lut.rb
 	ruby tools/generate-circle-lut.rb > src/circle-lut.inc
 

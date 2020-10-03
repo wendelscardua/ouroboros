@@ -3,7 +3,7 @@
 .segment "HEADER"
 .byte "NES", $1a ; Magic string that always begins an iNES header
 .byte $02        ; Number of 16KB PRG-ROM banks
-.byte $01        ; Number of 8KB CHR-ROM banks
+.byte $02        ; Number of 8KB CHR-ROM banks
 
 .byte %01000001  ; Flags 6
 ;      ||||||||

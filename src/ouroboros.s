@@ -167,11 +167,31 @@ vblankwait:
 .endmacro
 
 .proc irq_handler
+  STA $e000
+  save_regs
+  LDX #$10
+: DEX
+  BPL :-
+  JSR load_lower_chr
+  restore_regs
+
   RTI
 .endproc
 
 .proc nmi_handler
   INC nmis
+  LDA game_state
+  CMP #game_states::playing
+  BNE :+
+  JSR load_upper_chr
+
+  ; set irq for bottom half bankswitching
+  STA $e000
+  LDA #$77
+  STA $c000
+  STA $c001
+  STA $e001
+:
   RTI
 .endproc
 
@@ -302,22 +322,90 @@ etc:
   ; sprites
   LDA #2
   STA BANK_SELECT
-  LDA #4
+  LDA #12
   STA BANK_DATA
 
   LDA #3
   STA BANK_SELECT
-  LDA #5
+  LDA #13
   STA BANK_DATA
 
   LDA #4
   STA BANK_SELECT
-  LDA #6
+  LDA #14
   STA BANK_DATA
 
   LDA #5
   STA BANK_SELECT
-  LDA #7
+  LDA #15
+  STA BANK_DATA
+  RTS
+.endproc
+
+.proc load_upper_chr
+  ; bg
+  LDA #0
+  STA BANK_SELECT
+  LDA #4
+  STA BANK_DATA
+  LDA #1
+  STA BANK_SELECT
+  LDA #6
+  STA BANK_DATA
+
+  ; sprites
+  LDA #2
+  STA BANK_SELECT
+  LDA #12
+  STA BANK_DATA
+
+  LDA #3
+  STA BANK_SELECT
+  LDA #13
+  STA BANK_DATA
+
+  LDA #4
+  STA BANK_SELECT
+  LDA #14
+  STA BANK_DATA
+
+  LDA #5
+  STA BANK_SELECT
+  LDA #15
+  STA BANK_DATA
+  RTS
+.endproc
+
+.proc load_lower_chr
+  ; bg
+  LDA #0
+  STA BANK_SELECT
+  LDA #8
+  STA BANK_DATA
+  LDA #1
+  STA BANK_SELECT
+  LDA #10
+  STA BANK_DATA
+
+  ; sprites
+  LDA #2
+  STA BANK_SELECT
+  LDA #12
+  STA BANK_DATA
+
+  LDA #3
+  STA BANK_SELECT
+  LDA #13
+  STA BANK_DATA
+
+  LDA #4
+  STA BANK_SELECT
+  LDA #14
+  STA BANK_DATA
+
+  LDA #5
+  STA BANK_SELECT
+  LDA #15
   STA BANK_DATA
   RTS
 .endproc
@@ -533,18 +621,29 @@ nametable_main: .incbin "../assets/nametables/main.rle"
 .include "circle-lut.inc"
 
 .segment "CHR"
-.incbin "../assets/chr/bg-4k.chr"
+.incbin "../assets/chr/bg-4k-title.chr"
+.incbin "../assets/chr/bg-4k-upper-half.chr"
+.incbin "../assets/chr/bg-4k-lower-half.chr"
+.incbin "../assets/chr/sprites-4k.chr"
 .incbin "../assets/chr/sprites-4k.chr"
 
 ; 1k blocks
-;  0 : bg
-;  1 : bg
-;  2 : bg
-;  3 : bg
-;  4 : sp
-;  5 : sp
-;  6 : sp
-;  7 : sp
+;  0 : bg-title
+;  1 : bg-title
+;  2 : bg-title
+;  3 : bg-title
+;  4 : bg-upper
+;  5 : bg-upper
+;  6 : bg-upper
+;  7 : bg-upper
+;  8 : bg-lower
+;  9 : bg-lower
+; 10 : bg-lower
+; 11 : bg-lower
+; 12 : sp
+; 13 : sp
+; 14 : sp
+; 15 : sp
 
 ; banks
 ; 0 : 2k bg
