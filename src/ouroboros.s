@@ -159,10 +159,10 @@ old_nmis: .res 1
 
 sprite_counter: .res 1
 
-snake_theta_queue: .res 16
-snake_rho_queue: .res 16
-snake_queue_head: .res 1
-snake_queue_tail: .res 1
+worm_theta_queue: .res 16
+worm_rho_queue: .res 16
+worm_queue_head: .res 1
+worm_queue_tail: .res 1
 
 sprite_rho: .res 1
 sprite_theta: .res 1
@@ -553,18 +553,18 @@ etc:
 INITIAL_SIZE=4
   ; game setup
   LDA #$00
-  STA snake_queue_tail
+  STA worm_queue_tail
   LDA #(INITIAL_SIZE-1)
-  STA snake_queue_head
+  STA worm_queue_head
 
   LDA #$00
   .repeat INITIAL_SIZE, i
-    STA snake_rho_queue+i
+    STA worm_rho_queue+i
   .endrepeat
 
   .repeat INITIAL_SIZE, i
     LDA #(STEP_THETA*i)
-    STA snake_theta_queue+i
+    STA worm_theta_queue+i
   .endrepeat
 
   LDA #0
@@ -625,8 +625,8 @@ INITIAL_SIZE=4
   LDA pressed_buttons
   AND #BUTTON_LEFT
   BEQ no_left
-  LDX snake_queue_head
-  LDA snake_rho_queue, X
+  LDX worm_queue_head
+  LDA worm_rho_queue, X
   CMP #3
   BEQ no_left
   CLC
@@ -637,8 +637,8 @@ no_left:
   AND #BUTTON_RIGHT
   BEQ no_right
 
-  LDX snake_queue_head
-  LDA snake_rho_queue, X
+  LDX worm_queue_head
+  LDA worm_rho_queue, X
   BEQ no_right
   SEC
   SBC #1
@@ -650,37 +650,37 @@ no_right:
   AND #%111
   BNE no_step
 
-  LDX snake_queue_tail
+  LDX worm_queue_tail
   INX_MOD_16
-  STX snake_queue_tail
+  STX worm_queue_tail
 
-  LDX snake_queue_head
+  LDX worm_queue_head
 
   LDY temp_rho
-  LDA snake_theta_queue, X
+  LDA worm_theta_queue, X
   CLC
   ADC step_theta_per_rho, Y
   STA temp_theta
 
   INX_MOD_16
   LDA temp_rho
-  STA snake_rho_queue, X
+  STA worm_rho_queue, X
   LDA temp_theta
-  STA snake_theta_queue, X
-  STX snake_queue_head
+  STA worm_theta_queue, X
+  STX worm_queue_head
 
 no_step:
 
   LDA #0
   STA sprite_counter
 
-  LDX snake_queue_head
-render_snake_loop:
-  LDA snake_rho_queue, X
+  LDX worm_queue_head
+render_worm_loop:
+  LDA worm_rho_queue, X
   STA sprite_rho
-  LDA snake_theta_queue, X
+  LDA worm_theta_queue, X
   STA sprite_theta
-  CPX snake_queue_head
+  CPX worm_queue_head
   BNE @no_head
   LDA sprite_theta
   LSR
@@ -690,7 +690,7 @@ render_snake_loop:
   STA sprite_tile
   JMP @set_flag
 @no_head:
-  CPX snake_queue_tail
+  CPX worm_queue_tail
   BNE @no_tail
   LDA sprite_theta
   LSR
@@ -715,11 +715,11 @@ render_snake_loop:
   STA sprite_flag
 
   JSR draw_polar_sprite
-  CPX snake_queue_tail
-  BEQ exit_render_snake_loop
+  CPX worm_queue_tail
+  BEQ exit_render_worm_loop
   DEX_MOD_16
-  JMP render_snake_loop
-exit_render_snake_loop:
+  JMP render_worm_loop
+exit_render_worm_loop:
   RTS
 .endproc
 
