@@ -113,6 +113,11 @@ old_nmis: .res 1
 
 sprite_counter: .res 1
 
+theta: .res 1
+
+temp_x: .res 1
+temp_y: .res 1
+
 .enum game_states
   waiting_to_start
   playing
@@ -223,7 +228,7 @@ clear_ram:
 
   CLI ; enable interrupts
 
-  JSR go_to_title
+  JSR go_to_playing ; TODO change to title later
 
 forever:
   LDA nmis
@@ -404,6 +409,8 @@ etc:
   JSR unrle
 
   ; game setup
+  LDA #$00
+  STA theta
 
   VBLANK
 
@@ -456,6 +463,29 @@ etc:
 
 .proc playing
   JSR readjoy
+  INC theta
+  LDX theta
+  LDA circle_x_lut, X
+  STA temp_x
+  LDA circle_y_lut, X
+  STA temp_y
+
+  LDX #$00
+
+  LDA temp_x
+  STA oam_sprites+Sprite::xcoord, X
+  LDA temp_y
+  STA oam_sprites+Sprite::ycoord, X
+  LDA #0
+  STA oam_sprites+Sprite::tile, X
+  LDA #2
+  STA oam_sprites+Sprite::flag, X
+  .repeat .sizeof(Sprite)
+  INX
+  .endrepeat
+
+  STX sprite_counter
+  
   RTS
 .endproc
 
