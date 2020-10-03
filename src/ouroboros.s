@@ -85,7 +85,34 @@ skip:
 
 ; game config
 
-STEP_THETA = 4
+STEP_THETA = 8
+
+; debug - macros for NintendulatorDX interaction
+.ifdef DEBUG
+.macro debugOut str
+  sta $4040
+  jmp :+
+      .byte str, 0
+:
+.endmacro
+
+.macro debugRegs
+  STA debug_a
+  STX debug_x
+  STY debug_y
+.endmacro
+
+.define fHex8( addr ) 1, 0, <(addr), >(addr)
+.define fDec8( addr ) 1, 1, <(addr), >(addr)
+.define fHex16( addr ) 1, 2, <(addr), >(addr)
+.define fDec16( addr ) 1, 3, <(addr), >(addr)
+.else
+.macro debugOut str
+.endmacro
+.macro debugRegs
+.endmacro
+.endif
+
 
 .segment "ZEROPAGE"
 FT_TEMP: .res 3
@@ -200,6 +227,7 @@ vblankwait:
 .endproc
 
 .proc nmi_handler
+  save_regs
   INC nmis
   LDA game_state
   CMP #game_states::playing
@@ -213,6 +241,7 @@ vblankwait:
   STA $c001
   STA $e001
 :
+  restore_regs
   RTI
 .endproc
 
@@ -513,19 +542,20 @@ etc:
   STA rle_ptr+1
   JSR unrle
 
+INITIAL_SIZE=8
   ; game setup
   LDA #$00
   STA snake_queue_tail
-  LDA #$02
+  LDA #(INITIAL_SIZE-1)
   STA snake_queue_head
 
   LDA #$00
-  .repeat 3, i
+  .repeat INITIAL_SIZE, i
     STA snake_rho_queue+i
   .endrepeat
 
-  .repeat 3, i
-    LDA #(-STEP_THETA*i)
+  .repeat INITIAL_SIZE, i
+    LDA #(STEP_THETA*i)
     STA snake_theta_queue+i
   .endrepeat
 
