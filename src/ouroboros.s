@@ -85,7 +85,7 @@ skip:
 
 ; game config
 
-STEP_THETA = 8
+STEP_THETA = 2
 
 ; debug - macros for NintendulatorDX interaction
 .ifdef DEBUG
@@ -542,7 +542,7 @@ etc:
   STA rle_ptr+1
   JSR unrle
 
-INITIAL_SIZE=8
+INITIAL_SIZE=4
   ; game setup
   LDA #$00
   STA snake_queue_tail
@@ -558,6 +558,9 @@ INITIAL_SIZE=8
     LDA #(STEP_THETA*i)
     STA snake_theta_queue+i
   .endrepeat
+
+  LDA #0
+  STA temp_rho
 
   VBLANK
 
@@ -618,7 +621,9 @@ INITIAL_SIZE=8
   LDA snake_rho_queue, X
   CMP #3
   BEQ no_left
-  INC snake_rho_queue, X
+  CLC
+  ADC #1
+  STA temp_rho
 no_left:
   LDA pressed_buttons
   AND #BUTTON_RIGHT
@@ -627,7 +632,9 @@ no_left:
   LDX snake_queue_head
   LDA snake_rho_queue, X
   BEQ no_right
-  DEC snake_rho_queue, X
+  SEC
+  SBC #1
+  STA temp_rho
 
 no_right:
 
@@ -640,11 +647,11 @@ no_right:
   STX snake_queue_tail
 
   LDX snake_queue_head
-  LDA snake_rho_queue, X
-  STA temp_rho
+
+  LDY temp_rho
   LDA snake_theta_queue, X
   CLC
-  ADC #STEP_THETA
+  ADC step_theta_per_rho, Y
   STA temp_theta
 
   INX_MOD_16
@@ -757,6 +764,8 @@ palettes:
 
 nametable_title: .incbin "../assets/nametables/title.rle"
 nametable_main: .incbin "../assets/nametables/main.rle"
+
+step_theta_per_rho: .byte 2, 2, 3, 3
 
 ; 256 pairs of points x, y in a circle
 
