@@ -114,6 +114,7 @@ old_nmis: .res 1
 sprite_counter: .res 1
 
 theta: .res 1
+rho: .res 1
 
 temp_x: .res 1
 temp_y: .res 1
@@ -499,6 +500,7 @@ etc:
   ; game setup
   LDA #$00
   STA theta
+  STA rho
 
   VBLANK
 
@@ -551,16 +553,48 @@ etc:
 
 .proc playing
   JSR readjoy
+
+  LDA pressed_buttons
+  AND #BUTTON_LEFT
+  BEQ no_left
+  LDA rho
+  CMP #3
+  BEQ no_left
+  INC rho
+no_left:
+  LDA pressed_buttons
+  AND #BUTTON_RIGHT
+  BEQ no_right
+  LDA rho
+  BEQ no_right
+  DEC rho
+no_right:
+
   INC theta
-  LDX theta
-  LDA circle_x_lut, X
+
+  LDX rho
+  LDY theta
+  
+  LDA circle_lut_x_ptr_l, X
+  STA addr_ptr
+  LDA circle_lut_x_ptr_h, X
+  STA addr_ptr+1
+  
+  LDA (addr_ptr), Y
   SEC
   SBC #4
   STA temp_x
-  LDA circle_y_lut, X
+
+  LDA circle_lut_y_ptr_l, X
+  STA addr_ptr
+  LDA circle_lut_y_ptr_h, X
+  STA addr_ptr+1
+  
+  LDA (addr_ptr), Y
   SEC
   SBC #4
   STA temp_y
+
 
   LDX #$00
 
