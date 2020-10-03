@@ -74,7 +74,18 @@ FT_DPCM_OFF=$c000
   STA PPUCTRL
 .endmacro
 
+.macro INX_MOD_16
+  .local skip
+  INX
+  CPX #16
+  BNE skip
+  LDX #0
+skip:  
+.endmacro
+
 ; game config
+
+STEP_THETA = 4
 
 .segment "ZEROPAGE"
 FT_TEMP: .res 3
@@ -113,8 +124,10 @@ old_nmis: .res 1
 
 sprite_counter: .res 1
 
-theta: .res 1
-rho: .res 1
+snake_theta_queue: .res 16
+snake_rho_queue: .res 16
+snake_queue_head: .res 1
+snake_queue_tail: .res 1
 
 sprite_rho: .res 1
 sprite_theta: .res 1
@@ -123,6 +136,8 @@ sprite_flag: .res 1
 
 temp_x: .res 1
 temp_y: .res 1
+temp_rho: .res 1
+temp_theta: .res 1
 
 .enum game_states
   waiting_to_start
@@ -262,7 +277,7 @@ forever:
   BEQ etc
   STA old_nmis
 .ifdef DEBUG
-  LDA #%10011110  ; red tint
+  LDA #%01011110  ; red tint
   STA PPUMASK
 .endif
   JSR refresh_oam
@@ -504,8 +519,19 @@ etc:
 
   ; game setup
   LDA #$00
-  STA theta
-  STA rho
+  STA snake_queue_tail
+  LDA #$02
+  STA snake_queue_head
+
+  LDA #$00
+  .repeat 3, i
+    STA snake_rho_queue+i
+  .endrepeat
+
+  .repeat 3, i
+    LDA #(-STEP_THETA*i)
+    STA snake_theta_queue+i
+  .endrepeat
 
   VBLANK
 
@@ -562,42 +588,76 @@ etc:
   LDA pressed_buttons
   AND #BUTTON_LEFT
   BEQ no_left
-  LDA rho
+  LDX snake_queue_head
+  LDA snake_rho_queue, X
   CMP #3
   BEQ no_left
-  INC rho
+  INC snake_rho_queue, X
 no_left:
   LDA pressed_buttons
   AND #BUTTON_RIGHT
   BEQ no_right
-  LDA rho
+
+  LDX snake_queue_head
+  LDA snake_rho_queue, X
   BEQ no_right
-  DEC rho
+  DEC snake_rho_queue, X
+
 no_right:
 
-  INC theta
+  LDA nmis
+  AND #%111
+  BNE no_step
+
+  LDX snake_queue_tail
+  INX_MOD_16
+  STX snake_queue_tail
+
+  LDX snake_queue_head
+  LDA snake_rho_queue, X
+  STA temp_rho
+  LDA snake_theta_queue, X
+  CLC
+  ADC #STEP_THETA
+  STA temp_theta
+
+  INX_MOD_16
+  LDA temp_rho
+  STA snake_rho_queue, X
+  LDA temp_theta
+  STA snake_theta_queue, X
+  STX snake_queue_head
+
+no_step:
 
   LDA #0
   STA sprite_counter
 
-  LDA rho
+  LDX snake_queue_tail
+render_snake_loop:
+  LDA snake_rho_queue, X
   STA sprite_rho
-  LDA theta
+  LDA snake_theta_queue, X
   STA sprite_theta
   LDA #0
   STA sprite_tile
   STA sprite_flag
 
   JSR draw_polar_sprite
-  
+  CPX snake_queue_head
+  BEQ exit_render_snake_loop
+  INX_MOD_16
+  JMP render_snake_loop
+exit_render_snake_loop:
   RTS
 .endproc
 
 .proc draw_polar_sprite
   ; input: sprite_rho, sprite_theta, sprite_tile, sprite_flag
+  save_regs
   LDX sprite_rho
   LDY sprite_theta
-  
+
   LDA circle_lut_x_ptr_l, X
   STA addr_ptr
   LDA circle_lut_x_ptr_h, X
@@ -633,7 +693,7 @@ no_right:
   .endrepeat
 
   STX sprite_counter
-
+  restore_regs
   RTS
 .endproc
 
