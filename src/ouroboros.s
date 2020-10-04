@@ -153,6 +153,7 @@ oam_sprites:
 ; zp vars
 addr_ptr: .res 2 ; generic address pointer
 ppu_addr_ptr: .res 2
+sprite_ptr: .res 2 ; metasprite pointer
 
 nmis: .res 1
 old_nmis: .res 1
@@ -768,6 +769,65 @@ exit_render_worm_loop:
   RTS
 .endproc
 
+.proc draw_polar_metasprite
+  ; input: sprite_rho, sprite_theta, sprite_ptr for metasprite
+  save_regs
+  LDX sprite_rho
+  LDY sprite_theta
+
+  LDA circle_lut_x_ptr_l, X
+  STA addr_ptr
+  LDA circle_lut_x_ptr_h, X
+  STA addr_ptr+1
+  
+  LDA (addr_ptr), Y
+  STA temp_x
+
+  LDA circle_lut_y_ptr_l, X
+  STA addr_ptr
+  LDA circle_lut_y_ptr_h, X
+  STA addr_ptr+1
+  
+  LDA (addr_ptr), Y
+  STA temp_y
+
+  LDX sprite_counter
+  LDY #$0
+
+metasprite_loop:
+  LDA (sprite_ptr), Y
+  INY
+  CMP #128
+  BEQ exit_metasprite_loop
+  CLC
+  ADC temp_x
+  STA oam_sprites+Sprite::xcoord, X
+  
+  LDA (sprite_ptr), Y
+  INY
+  CLC
+  ADC temp_y
+  STA oam_sprites+Sprite::ycoord, X
+  
+  LDA (sprite_ptr), Y
+  INY
+  STA oam_sprites+Sprite::tile, X
+
+  LDA (sprite_ptr), Y
+  INY
+  STA oam_sprites+Sprite::flag, X
+  .repeat .sizeof(Sprite)
+  INX
+  .endrepeat
+
+  JMP metasprite_loop
+exit_metasprite_loop:
+
+  STX sprite_counter
+  restore_regs
+  RTS
+.endproc
+
 .proc write_string
   LDA PPUSTATUS
   LDA ppu_addr_ptr+1
@@ -808,6 +868,8 @@ step_theta_per_rho: .byte 2, 2, 3, 3
 ; 256 pairs of points x, y in a circle
 
 .include "circle-lut.inc"
+
+.include "../assets/metasprites.inc"
 
 .segment "CHR"
 .incbin "../assets/chr/bg-4k-title.chr"
