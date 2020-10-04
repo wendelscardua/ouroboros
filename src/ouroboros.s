@@ -644,7 +644,7 @@ INITIAL_SIZE=4
   BEQ no_left
   LDX worm_queue_head
   LDA worm_rho_queue, X
-  CMP #3
+  CMP #6
   BEQ no_left
   CLC
   ADC #1
@@ -879,7 +879,7 @@ palettes:
 nametable_title: .incbin "../assets/nametables/title.rle"
 nametable_main: .incbin "../assets/nametables/main.rle"
 
-step_theta_per_rho: .byte 2, 2, 3, 3
+step_theta_per_rho: .byte 2, 2, 2, 2, 3, 3, 3
 
 ; 256 pairs of points x, y in a circle
 

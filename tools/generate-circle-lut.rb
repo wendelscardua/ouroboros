@@ -4,13 +4,15 @@
 X_CENTER = 0x80
 Y_CENTER = 0x78
 
+RADII = [0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40]
+
 %w[x y].each do |coord|
-  puts ".define circle_lut_#{coord}_ptr " + (0..3).map { |i| "circle_#{i}_#{coord}_lut" }.join(', ')
+  puts ".define circle_lut_#{coord}_ptr " + RADII.count.times.map { |i| "circle_#{i}_#{coord}_lut" }.join(', ')
   puts "circle_lut_#{coord}_ptr_h: .hibytes circle_lut_#{coord}_ptr"
   puts "circle_lut_#{coord}_ptr_l: .lobytes circle_lut_#{coord}_ptr"
 end
 
-[0x70, 0x60, 0x50, 0x40].each.with_index do |radius, index|
+RADII.each.with_index do |radius, index|
   coords = (0...256).map do |i|
     fraction = 2 * Math::PI * i / 256.0
     x = X_CENTER + radius * Math.sin(fraction)
