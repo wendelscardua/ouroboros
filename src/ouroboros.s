@@ -604,6 +604,8 @@ INITIAL_SIZE=4
   LDA #INITIAL_STEP_DELAY
   STA step_counter
   STA step_delay
+
+  LDA #0
   STA subsecond_counter
   STA enemy_spawn_timer
 
@@ -807,14 +809,75 @@ loop:
 .endproc
 
 .proc render_large_clock
+  LDA enemy_rho_queue, X
+  STA sprite_rho
+  LDA enemy_theta_queue, X
+  STA sprite_theta
+  LDA #.lobyte(metasprite_4_data)
+  STA sprite_ptr
+  LDA #.hibyte(metasprite_4_data)
+  STA sprite_ptr+1
+  JSR draw_polar_metasprite
   RTS
 .endproc
 
 .proc render_hourglass
+  LDA enemy_rho_queue, X
+  STA sprite_rho
+  LDA enemy_theta_queue, X
+  STA sprite_theta
+  LDA nmis
+  AND #%110000
+  LSR
+  LSR
+  LSR
+  LSR
+  CMP #%01
+  BEQ frame_1
+  CMP #%10
+  BEQ frame_2
+  CMP #%11
+  BEQ frame_3
+frame_0:
+  LDA #.lobyte(metasprite_0_data)
+  STA sprite_ptr
+  LDA #.hibyte(metasprite_0_data)
+  STA sprite_ptr+1
+  JSR draw_polar_metasprite
+  RTS
+frame_1:
+  LDA #.lobyte(metasprite_1_data)
+  STA sprite_ptr
+  LDA #.hibyte(metasprite_1_data)
+  STA sprite_ptr+1
+  JSR draw_polar_metasprite
+  RTS
+frame_2:
+  LDA #.lobyte(metasprite_2_data)
+  STA sprite_ptr
+  LDA #.hibyte(metasprite_2_data)
+  STA sprite_ptr+1
+  JSR draw_polar_metasprite
+  RTS
+frame_3:
+  LDA #.lobyte(metasprite_3_data)
+  STA sprite_ptr
+  LDA #.hibyte(metasprite_3_data)
+  STA sprite_ptr+1
+  JSR draw_polar_metasprite
   RTS
 .endproc
 
 .proc render_virus
+  LDA enemy_rho_queue, X
+  STA sprite_rho
+  LDA enemy_theta_queue, X
+  STA sprite_theta
+  LDA #.lobyte(metasprite_5_data)
+  STA sprite_ptr
+  LDA #.hibyte(metasprite_5_data)
+  STA sprite_ptr+1
+  JSR draw_polar_metasprite
   RTS
 .endproc
 
@@ -892,10 +955,12 @@ no_enemy_spawn:
 .endproc
 
 .proc spawn_enemy
-  ; TODO: randomize enemy
-
   LDX enemy_queue_tail
-  LDA #enemy_types::small_clock
+
+  ; random enemy (0-3)
+  ; TODO: include/implement anti worm
+  JSR rand
+  AND #%11
   STA enemy_type_queue, X
 
   ; random rho (0-6)
