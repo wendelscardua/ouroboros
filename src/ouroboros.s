@@ -103,10 +103,9 @@ skip:
 ; game config
 
 STEP_THETA = 2
-INITIAL_STEP_DELAY = 15 ; frames
-SPAWN_PERIOD = 5 ; seconds
+SPAWN_PERIOD = 2 ; seconds
 MAX_ENEMIES = 12
-START_TIME = 90
+START_TIME = $0100
 COLLISION_THETA = 4
 
 ; debug - macros for NintendulatorDX interaction
@@ -178,8 +177,10 @@ sprite_counter: .res 1
 step_delay: .res 1
 step_counter: .res 1
 
-remaining_time: .res 1
-elapsed_time: .res 1
+; time = one byte for seconds, then one byte for minutes
+remaining_time: .res 2
+elapsed_time: .res 2
+best_time: .res 2
 
 ; worm queue is unusual:
 ; it grows at the head
@@ -351,6 +352,9 @@ clear_ram:
 
   CLI ; enable interrupts
 
+  LDA #$ff
+  STA best_time
+  STA best_time+1
   JSR go_to_title
 
 forever:
@@ -616,7 +620,7 @@ INITIAL_SIZE=4
   STA temp_rho
   STA enemy_queue_head
   STA enemy_queue_tail
-  LDA #INITIAL_STEP_DELAY
+  LDA #15
   STA step_counter
   STA step_delay
 
@@ -624,9 +628,57 @@ INITIAL_SIZE=4
   STA subsecond_counter
   STA enemy_spawn_timer
   STA elapsed_time
+  STA elapsed_time+1
 
-  LDA #START_TIME
+  LDA #.lobyte(START_TIME)
   STA remaining_time
+  LDA #.hibyte(START_TIME)
+  STA remaining_time+1
+
+  BIT PPUSTATUS
+  LDA #$21
+  STA PPUADDR
+  LDA #$b0
+  STA PPUADDR
+  LDX remaining_time+1
+  LDA tens_digit_lt, X
+  STA PPUDATA
+  LDA ones_digit_lt, X
+  STA PPUDATA
+  LDA #$fa ; ":"
+  STA PPUDATA
+  LDX remaining_time
+  LDA tens_digit_lt, X
+  STA PPUDATA
+  LDA ones_digit_lt, X
+  STA PPUDATA
+
+  LDA best_time+1
+  BMI skip_display_best
+  BIT PPUSTATUS
+  LDA #$21
+  STA PPUADDR
+  LDA #$f0
+  STA PPUADDR
+  LDX best_time+1
+  LDA tens_digit_lt, X
+  STA PPUDATA
+  LDA ones_digit_lt, X
+  STA PPUDATA
+  LDA #$fa ; ":"
+  STA PPUDATA
+  LDX best_time
+  LDA tens_digit_lt, X
+  STA PPUDATA
+  LDA ones_digit_lt, X
+  STA PPUDATA
+skip_display_best:
+  LDA #$20
+  STA PPUADDR
+  LDA #$00
+  STA PPUADDR
+  STA PPUSCROLL
+  STA PPUSCROLL
 
   VBLANK
 
@@ -707,7 +759,9 @@ no_left:
 no_right:
 
   DEC step_counter
+  BEQ :+
   BPL no_step
+:
   LDA step_delay
   STA step_counter
 
@@ -781,6 +835,13 @@ loop:
   LDA time_delta_per_enemy, Y
   CLC
   ADC remaining_time
+  CMP #60
+  BCC no_carry
+  SEC
+  SBC #60
+  INC remaining_time+1
+no_carry:
+  STA remaining_time
 
   ; delete enemy
   CPX enemy_queue_head
@@ -978,6 +1039,75 @@ frame_3:
   LDA #0
   STA subsecond_counter
 
+  ; update timers
+
+  ; remaining time
+  DEC remaining_time
+  BPL no_game_over
+  LDA #59
+  STA remaining_time
+  DEC remaining_time+1
+  BPL no_game_over
+
+  JSR go_to_game_over
+  RTS
+no_game_over:
+  INC elapsed_time
+  LDA elapsed_time
+  CMP #60
+  BNE :+
+  LDA #0
+  STA elapsed_time
+  INC elapsed_time+1
+:
+
+  ; display timers
+
+  BIT PPUSTATUS
+  LDA #$21
+  STA PPUADDR
+  LDA #$b0
+  STA PPUADDR
+  LDX remaining_time+1
+  LDA tens_digit_lt, X
+  STA PPUDATA
+  LDA ones_digit_lt, X
+  STA PPUDATA
+  LDA #$fa ; ":"
+  STA PPUDATA
+  LDX remaining_time
+  LDA tens_digit_lt, X
+  STA PPUDATA
+  LDA ones_digit_lt, X
+  STA PPUDATA
+
+  LDA #$21
+  STA PPUADDR
+  LDA #$d0
+  STA PPUADDR
+  LDX elapsed_time+1
+  LDA tens_digit_lt, X
+  STA PPUDATA
+  LDA ones_digit_lt, X
+  STA PPUDATA
+  LDA #$fa ; ":"
+  STA PPUDATA
+  LDX elapsed_time
+  LDA tens_digit_lt, X
+  STA PPUDATA
+  LDA ones_digit_lt, X
+  STA PPUDATA
+
+  LDA #$20
+  STA PPUADDR
+  LDA #$00
+  STA PPUADDR
+  STA PPUSCROLL
+  STA PPUSCROLL
+
+  ; tweak speed depending on timer
+  JSR adjust_speed
+
   ; enemy spawn
 
   INC enemy_spawn_timer
@@ -989,14 +1119,44 @@ frame_3:
   JSR spawn_enemy
 no_enemy_spawn:
 
-  ; remaining time
-  DEC remaining_time
-  BNE no_game_over
+  RTS
+.endproc
 
-  JSR go_to_game_over
-
-no_game_over:
-
+.proc adjust_speed
+  LDA remaining_time+1
+  CMP #2
+  BCC less_than_2_minutes
+  LDA #10
+  STA step_delay
+  RTS
+less_than_2_minutes:
+  CMP #1
+  BCC less_than_1_minute
+  LDA #8
+  STA step_delay
+  RTS
+less_than_1_minute:
+  LDA remaining_time
+  CMP #45
+  BCC less_than_45_seconds
+  LDA #6
+  STA step_delay
+  RTS
+less_than_45_seconds:
+  CMP #30
+  BCC less_than_30_seconds
+  LDA #4
+  STA step_delay
+  RTS
+less_than_30_seconds:
+  CMP #15
+  BCC less_than_15_seconds
+  LDA #2
+  STA step_delay
+  RTS
+less_than_15_seconds:
+  LDA #1
+  STA step_delay
   RTS
 .endproc
 
@@ -1196,6 +1356,17 @@ nametable_title: .incbin "../assets/nametables/title.rle"
 nametable_main: .incbin "../assets/nametables/main.rle"
 
 step_theta_per_rho: .byte 2, 2, 3, 3
+
+; decimal to tens digit
+tens_digit_lt:
+  .repeat 60, i
+    .byte i / 10 + $f0
+  .endrepeat
+; decimal to ones digit
+ones_digit_lt:
+  .repeat 60, i
+    .byte i .mod 10 + $f0
+  .endrepeat
 
 ; 256 pairs of points x, y in a circle
 
