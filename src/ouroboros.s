@@ -175,6 +175,7 @@ worm_queue_tail: .res 1
 ; head == tail means empty queue
 enemy_theta_queue: .res 16
 enemy_rho_queue: .res 16
+enemy_type_queue: .res 16
 enemy_queue_head: .res 1
 enemy_queue_tail: .res 1
 
@@ -583,6 +584,8 @@ INITIAL_SIZE=4
 
   LDA #0
   STA temp_rho
+  STA enemy_queue_head
+  STA enemy_queue_tail
 
   VBLANK
 
