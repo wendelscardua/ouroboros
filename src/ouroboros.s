@@ -94,6 +94,8 @@ skip:
 ; game config
 
 STEP_THETA = 2
+INITIAL_STEP_DELAY = 15 ; frames
+SPAWN_PERIOD = 5 ; seconds
 
 ; debug - macros for NintendulatorDX interaction
 .ifdef DEBUG
@@ -120,7 +122,6 @@ STEP_THETA = 2
 .macro debugRegs
 .endmacro
 .endif
-
 
 .segment "ZEROPAGE"
 FT_TEMP: .res 3
@@ -158,7 +159,12 @@ sprite_ptr: .res 2 ; metasprite pointer
 nmis: .res 1
 old_nmis: .res 1
 
+subsecond_counter: .res 1
+
 sprite_counter: .res 1
+
+step_delay: .res 1
+step_counter: .res 1
 
 ; worm queue is unusual:
 ; it grows at the head
@@ -178,6 +184,15 @@ enemy_rho_queue: .res 16
 enemy_type_queue: .res 16
 enemy_queue_head: .res 1
 enemy_queue_tail: .res 1
+enemy_spawn_timer: .res 1
+
+.enum enemy_types
+  small_clock
+  large_clock
+  hourglass
+  virus
+  anti_worm
+.endenum
 
 sprite_rho: .res 1
 sprite_theta: .res 1
@@ -321,7 +336,7 @@ clear_ram:
 
   CLI ; enable interrupts
 
-  JSR go_to_playing ; TODO change to title later
+  JSR go_to_title
 
 forever:
   LDA nmis
@@ -586,6 +601,11 @@ INITIAL_SIZE=4
   STA temp_rho
   STA enemy_queue_head
   STA enemy_queue_tail
+  LDA #INITIAL_STEP_DELAY
+  STA step_counter
+  STA step_delay
+  STA subsecond_counter
+  STA enemy_spawn_timer
 
   VBLANK
 
@@ -637,6 +657,8 @@ INITIAL_SIZE=4
 .endproc
 
 .proc playing
+  JSR time_stuff
+
   JSR readjoy
 
   LDA pressed_buttons
@@ -663,9 +685,10 @@ no_left:
 
 no_right:
 
-  LDA nmis
-  AND #%111
-  BNE no_step
+  DEC step_counter
+  BPL no_step
+  LDA step_delay
+  STA step_counter
 
   LDX worm_queue_tail
   INX_MOD_16
@@ -691,6 +714,13 @@ no_step:
   LDA #0
   STA sprite_counter
 
+  JSR render_worm
+  JSR render_enemies
+
+  RTS
+.endproc
+
+.proc render_worm
   LDX worm_queue_head
 render_worm_loop:
   LDA worm_rho_queue, X
@@ -740,6 +770,82 @@ exit_render_worm_loop:
   RTS
 .endproc
 
+.proc render_enemies
+  LDX enemy_queue_head
+  CPX enemy_queue_tail
+  BNE loop
+  RTS
+loop:
+  JSR render_enemy
+  INX_MOD_16
+  CPX enemy_queue_tail
+  BNE loop
+  RTS
+.endproc
+
+.proc render_enemy
+  ; input: X = enemy queue index
+  LDY enemy_type_queue, X
+  LDA enemy_renders_h, Y
+  PHA
+  LDA enemy_renders_l, Y
+  PHA
+  RTS
+.endproc
+
+.proc render_small_clock
+  LDA enemy_rho_queue, X
+  STA sprite_rho
+  LDA enemy_theta_queue, X
+  STA sprite_theta
+  LDA #$38
+  STA sprite_tile
+  LDA #$01
+  STA sprite_flag
+  JSR draw_polar_sprite
+  RTS
+.endproc
+
+.proc render_large_clock
+  RTS
+.endproc
+
+.proc render_hourglass
+  RTS
+.endproc
+
+.proc render_virus
+  RTS
+.endproc
+
+.proc render_anti_worm
+  RTS
+.endproc
+  
+.proc time_stuff
+  INC subsecond_counter
+  LDA subsecond_counter
+  CMP #60
+  BEQ :+
+  RTS
+:
+  LDA #0
+  STA subsecond_counter
+
+  ; enemy spawn
+
+  INC enemy_spawn_timer
+  LDA enemy_spawn_timer
+  CMP #SPAWN_PERIOD
+  BCC no_enemy_spawn
+  LDA #0
+  STA enemy_spawn_timer
+  JSR spawn_enemy
+no_enemy_spawn:
+  
+  RTS
+.endproc
+
 .proc draw_polar_sprite
   ; input: sprite_rho, sprite_theta, sprite_tile, sprite_flag
   save_regs
@@ -783,6 +889,34 @@ exit_render_worm_loop:
   STX sprite_counter
   restore_regs
   RTS
+.endproc
+
+.proc spawn_enemy
+  ; TODO: randomize enemy
+
+  LDX enemy_queue_tail
+  LDA #enemy_types::small_clock
+  STA enemy_type_queue, X
+
+  ; random rho (0-6)
+: JSR rand
+  AND #%111
+  CMP #%111
+  BEQ :-
+
+  STA enemy_rho_queue, X
+
+  ; spawn oposite of player
+  LDY worm_queue_head
+  LDA worm_theta_queue, Y
+  CLC
+  ADC #128
+  STA enemy_theta_queue, X
+
+  INX_MOD_16
+  STX enemy_queue_tail
+
+  RTS  
 .endproc
 
 .proc draw_polar_metasprite
@@ -871,6 +1005,14 @@ exit_metasprite_loop:
 
 game_state_handlers_l: .lobytes game_state_handlers
 game_state_handlers_h: .hibytes game_state_handlers
+
+.define enemy_renders render_small_clock-1, \
+                      render_large_clock-1, \
+                      render_hourglass-1, \
+                      render_virus-1, \
+                      render_anti_worm-1
+enemy_renders_l: .lobytes enemy_renders
+enemy_renders_h: .hibytes enemy_renders
 
 palettes:
 .incbin "../assets/bg-palettes.pal"
