@@ -160,10 +160,23 @@ old_nmis: .res 1
 
 sprite_counter: .res 1
 
+; worm queue is unusual:
+; it grows at the head
+; both head and tail are inclusive
+; (so I don't confuse the queue head with the worm's actual head)
 worm_theta_queue: .res 16
 worm_rho_queue: .res 16
 worm_queue_head: .res 1
 worm_queue_tail: .res 1
+
+; usual queue:
+; grows at the tail
+; tail is exclusive
+; head == tail means empty queue
+enemy_theta_queue: .res 16
+enemy_rho_queue: .res 16
+enemy_queue_head: .res 1
+enemy_queue_tail: .res 1
 
 sprite_rho: .res 1
 sprite_theta: .res 1
