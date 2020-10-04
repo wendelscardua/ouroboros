@@ -83,6 +83,15 @@ FT_DPCM_OFF=$c000
 skip:  
 .endmacro
 
+.macro INY_MOD_16
+  .local skip
+  INY
+  CPY #16
+  BNE skip
+  LDY #0
+skip:  
+.endmacro
+
 .macro DEX_MOD_16
   .local skip
   DEX
@@ -96,6 +105,9 @@ skip:
 STEP_THETA = 2
 INITIAL_STEP_DELAY = 15 ; frames
 SPAWN_PERIOD = 5 ; seconds
+MAX_ENEMIES = 12
+START_TIME = 90
+COLLISION_THETA = 4
 
 ; debug - macros for NintendulatorDX interaction
 .ifdef DEBUG
@@ -165,6 +177,9 @@ sprite_counter: .res 1
 
 step_delay: .res 1
 step_counter: .res 1
+
+remaining_time: .res 1
+elapsed_time: .res 1
 
 ; worm queue is unusual:
 ; it grows at the head
@@ -268,8 +283,8 @@ vblankwait:
   save_regs
   INC nmis
   LDA game_state
-  CMP #game_states::playing
-  BNE :+
+  CMP #game_states::waiting_to_start
+  BEQ :+
   JSR load_upper_chr
 
   ; set irq for bottom half bankswitching
@@ -608,6 +623,10 @@ INITIAL_SIZE=4
   LDA #0
   STA subsecond_counter
   STA enemy_spawn_timer
+  STA elapsed_time
+
+  LDA #START_TIME
+  STA remaining_time
 
   VBLANK
 
@@ -668,7 +687,7 @@ INITIAL_SIZE=4
   BEQ no_left
   LDX worm_queue_head
   LDA worm_rho_queue, X
-  CMP #6
+  CMP #3
   BEQ no_left
   CLC
   ADC #1
@@ -712,6 +731,7 @@ no_right:
   STX worm_queue_head
 
 no_step:
+  JSR check_collisions
 
   LDA #0
   STA sprite_counter
@@ -719,6 +739,69 @@ no_step:
   JSR render_worm
   JSR render_enemies
 
+  ; erase sprites
+  LDX sprite_counter
+  LDA #$F0
+:
+  STA oam_sprites+Sprite::ycoord, X
+  .repeat .sizeof(Sprite)
+  INX
+  .endrepeat
+  BNE :-
+
+  RTS
+.endproc
+
+.proc check_collisions
+  LDX enemy_queue_head
+  CPX enemy_queue_tail
+  BNE :+
+  RTS
+:
+
+loop:
+  LDY worm_queue_head
+  LDA enemy_rho_queue, X
+  CMP worm_rho_queue, Y
+  BNE skip
+
+  LDA enemy_theta_queue, X
+  SEC
+  SBC worm_theta_queue, Y
+  BPL :+
+  ; negate
+  EOR #$ff
+  CLC
+  ADC #1
+:
+  CMP #COLLISION_THETA
+  BCS skip
+
+  LDY enemy_type_queue, X
+  LDA time_delta_per_enemy, Y
+  CLC
+  ADC remaining_time
+
+  ; delete enemy
+  CPX enemy_queue_head
+  BEQ delete_head
+delete_non_head:
+  LDY enemy_queue_head
+  LDA enemy_type_queue, Y
+  STA enemy_type_queue, X
+  LDA enemy_rho_queue, Y
+  STA enemy_rho_queue, X
+  LDA enemy_theta_queue, Y
+  STA enemy_theta_queue, X
+delete_head:
+  LDY enemy_queue_head
+  INY_MOD_16
+  STY enemy_queue_head
+  JMP skip
+skip:
+  INX_MOD_16
+  CPX enemy_queue_tail
+  BNE loop
   RTS
 .endproc
 
@@ -905,7 +988,15 @@ frame_3:
   STA enemy_spawn_timer
   JSR spawn_enemy
 no_enemy_spawn:
-  
+
+  ; remaining time
+  DEC remaining_time
+  BNE no_game_over
+
+  JSR go_to_game_over
+
+no_game_over:
+
   RTS
 .endproc
 
@@ -963,11 +1054,9 @@ no_enemy_spawn:
   AND #%11
   STA enemy_type_queue, X
 
-  ; random rho (0-6)
-: JSR rand
-  AND #%111
-  CMP #%111
-  BEQ :-
+  ; random rho (0-3)
+  JSR rand
+  AND #%11
 
   STA enemy_rho_queue, X
 
@@ -981,6 +1070,19 @@ no_enemy_spawn:
   INX_MOD_16
   STX enemy_queue_tail
 
+  TXA
+  SEC
+  SBC enemy_queue_head
+  BPL :+
+  CLC
+  ADC #$10
+:
+  CMP #MAX_ENEMIES
+  BCC :+
+  LDX enemy_queue_head
+  INX_MOD_16
+  STX enemy_queue_head
+:
   RTS  
 .endproc
 
@@ -1079,6 +1181,13 @@ game_state_handlers_h: .hibytes game_state_handlers
 enemy_renders_l: .lobytes enemy_renders
 enemy_renders_h: .hibytes enemy_renders
 
+time_delta_per_enemy:
+  .byte  5 ; small clock
+  .byte 10 ; large clock
+  .byte 30 ; hourglass
+  .byte 45 ; virus
+  .byte 60 ; anti worm
+
 palettes:
 .incbin "../assets/bg-palettes.pal"
 .incbin "../assets/sprite-palettes.pal"
@@ -1086,7 +1195,7 @@ palettes:
 nametable_title: .incbin "../assets/nametables/title.rle"
 nametable_main: .incbin "../assets/nametables/main.rle"
 
-step_theta_per_rho: .byte 2, 2, 2, 2, 3, 3, 3
+step_theta_per_rho: .byte 2, 2, 3, 3
 
 ; 256 pairs of points x, y in a circle
 

@@ -4,7 +4,7 @@
 X_CENTER = 0x80
 Y_CENTER = 0x78
 
-RADII = [0x70, 0x68, 0x60, 0x58, 0x50, 0x48, 0x40]
+RADII = [0x70, 0x60, 0x50, 0x40].freeze
 
 %w[x y].each do |coord|
   puts ".define circle_lut_#{coord}_ptr " + RADII.count.times.map { |i| "circle_#{i}_#{coord}_lut" }.join(', ')
