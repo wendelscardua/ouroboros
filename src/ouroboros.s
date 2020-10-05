@@ -82,7 +82,7 @@ FT_DPCM_OFF=$c000
   CPX #16
   BNE skip
   LDX #0
-skip:  
+skip:
 .endmacro
 
 .macro INY_MOD_16
@@ -91,7 +91,7 @@ skip:
   CPY #16
   BNE skip
   LDY #0
-skip:  
+skip:
 .endmacro
 
 .macro DEX_MOD_16
@@ -746,7 +746,7 @@ set_best_time:
   STA best_time
   LDA elapsed_time+1
   STA best_time+1
-  
+
 skip_best_time_stuff:
 
   RTS
@@ -1003,7 +1003,7 @@ loop:
 .proc render_large_clock
   LDA enemy_rho_queue, X
   STA sprite_rho
-  LDA enemy_theta_queue, X  
+  LDA enemy_theta_queue, X
   STA sprite_theta
   LDA #.lobyte(metasprite_4_data)
   STA sprite_ptr
@@ -1086,7 +1086,7 @@ frame_3:
 .proc render_anti_worm
   RTS
 .endproc
-  
+
 .proc time_stuff
   INC subsecond_counter
   LDA subsecond_counter
@@ -1228,7 +1228,7 @@ less_than_15_seconds:
   STA addr_ptr
   LDA circle_lut_x_ptr_h, X
   STA addr_ptr+1
-  
+
   LDA (addr_ptr), Y
   SEC
   SBC #4
@@ -1238,7 +1238,7 @@ less_than_15_seconds:
   STA addr_ptr
   LDA circle_lut_y_ptr_h, X
   STA addr_ptr+1
-  
+
   LDA (addr_ptr), Y
   SEC
   SBC #4
@@ -1301,7 +1301,7 @@ less_than_15_seconds:
   INX_MOD_16
   STX enemy_queue_head
 :
-  RTS  
+  RTS
 .endproc
 
 .proc draw_polar_metasprite
@@ -1314,7 +1314,7 @@ less_than_15_seconds:
   STA addr_ptr
   LDA circle_lut_x_ptr_h, X
   STA addr_ptr+1
-  
+
   LDA (addr_ptr), Y
   STA temp_x
 
@@ -1322,7 +1322,7 @@ less_than_15_seconds:
   STA addr_ptr
   LDA circle_lut_y_ptr_h, X
   STA addr_ptr+1
-  
+
   LDA (addr_ptr), Y
   STA temp_y
 
@@ -1337,13 +1337,13 @@ metasprite_loop:
   CLC
   ADC temp_x
   STA oam_sprites+Sprite::xcoord, X
-  
+
   LDA (sprite_ptr), Y
   INY
   CLC
   ADC temp_y
   STA oam_sprites+Sprite::ycoord, X
-  
+
   LDA (sprite_ptr), Y
   INY
   STA oam_sprites+Sprite::tile, X
