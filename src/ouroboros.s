@@ -840,6 +840,11 @@ loop:
   SEC
   SBC #60
   INC remaining_time+1
+  LDA remaining_time+1
+  CMP #3
+  BCC no_carry
+  LDA #3
+  STA remaining_time+1
 no_carry:
   STA remaining_time
 
