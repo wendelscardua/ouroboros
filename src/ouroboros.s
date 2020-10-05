@@ -529,6 +529,8 @@ etc:
 
 
 .proc go_to_title
+  STA $e000
+
   LDA #game_states::waiting_to_start
   STA game_state
 
