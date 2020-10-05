@@ -16,6 +16,8 @@ FT_DPCM_OFF=$c000
 
 ; music/sfx constants
 .enum music_track
+  Borosouro
+  ItKeepsHappening
 .endenum
 
 .enum sfx
@@ -566,6 +568,8 @@ etc:
 
   SCREEN_ON
 
+  PLAY Borosouro
+
   RTS
 .endproc
 
@@ -686,12 +690,16 @@ skip_display_best:
 
   SCREEN_ON
 
+  PLAY ItKeepsHappening
+
   RTS
 .endproc
 
 .proc go_to_game_over
   LDA #game_states::game_over
   STA game_state
+  PRINT string_yay, $222c
+  PRINT string_start, $226d
   RTS
 .endproc
 
@@ -1374,6 +1382,11 @@ ones_digit_lt:
 .include "circle-lut.inc"
 
 .include "../assets/metasprites.inc"
+
+; strings
+string_yay: .byte $e4,$e5,$e6,$e7,$e8,$e9,$ea,$eb,$ec,$ff
+string_start: .byte $d0,$d1,$d2,$d3,$d4,$ff
+
 
 .segment "CHR"
 .incbin "../assets/chr/bg-4k-title.chr"
