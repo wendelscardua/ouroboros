@@ -103,8 +103,8 @@ skip:
 ; game config
 
 STEP_THETA = 2
-SPAWN_PERIOD = 2 ; seconds
-MAX_ENEMIES = 12
+SPAWN_PERIOD = 3 ; seconds
+MAX_ENEMIES = 15
 START_TIME = $0100
 COLLISION_THETA = 4
 
