@@ -1156,11 +1156,11 @@ less_than_45_seconds:
 less_than_30_seconds:
   CMP #15
   BCC less_than_15_seconds
-  LDA #2
+  LDA #3
   STA step_delay
   RTS
 less_than_15_seconds:
-  LDA #1
+  LDA #2
   STA step_delay
   RTS
 .endproc
