@@ -382,7 +382,33 @@ forever:
   LDA #%00011110  ; no tint
   STA PPUMASK
 .endif
+  LDA game_state
+  CMP #game_states::playing
+  BNE update_music
+  LDA remaining_time+1
+  BEQ fast_music
+  LDA #%111
+  JMP delay_music
+fast_music:
+  LDA remaining_time
+  CMP #30
+  BCC faster_music
+  LDA #%11
+  JMP delay_music
+faster_music:
+  LDA remaining_time
+  CMP #15
+  BCC fastest_music
+  LDA #%1
+  JMP delay_music
+fastest_music:
+  LDA #%0
+delay_music:
+  AND nmis
+  BNE skip_music
+update_music:
   JSR FamiToneUpdate
+skip_music:
   JSR slow_updates
 etc:
   JMP forever

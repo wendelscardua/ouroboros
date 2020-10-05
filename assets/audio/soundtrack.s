@@ -126,7 +126,7 @@ soundtrack_music_data:
 
 ; It Keeps Happening
 @song1ch0:
-	.byte $fb,$06
+	.byte $fb,$03
 @song1ch0loop:
 @ref30:
 	.byte $82,$33,$39,$3a,$85,$33,$39,$3a,$85,$33,$39,$3b,$3d,$41,$3d,$3b
