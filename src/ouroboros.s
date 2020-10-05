@@ -726,6 +726,29 @@ skip_display_best:
   STA game_state
   PRINT string_yay, $222c
   PRINT string_start, $226d
+
+  ; update high score
+  LDA best_time+1
+  BMI set_best_time ; infinity best time, just replace with current time
+
+  ; compare times
+  LDA elapsed_time+1
+  CMP best_time+1
+  BCC set_best_time
+  BNE skip_best_time_stuff
+
+  LDA elapsed_time
+  CMP best_time
+  BCS skip_best_time_stuff
+
+set_best_time:
+  LDA elapsed_time
+  STA best_time
+  LDA elapsed_time+1
+  STA best_time+1
+  
+skip_best_time_stuff:
+
   RTS
 .endproc
 
