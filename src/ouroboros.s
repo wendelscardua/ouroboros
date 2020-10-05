@@ -690,23 +690,6 @@ skip_display_best:
 .proc go_to_game_over
   LDA #game_states::game_over
   STA game_state
-
-  ; erase sprites
-  LDX #$00
-  LDA #$F0
-:
-  STA oam_sprites+Sprite::ycoord, X
-  .repeat .sizeof(Sprite)
-  INX
-  .endrepeat
-  BNE :-
-
-  SCREEN_OFF
-
-  VBLANK
-
-  SCREEN_ON
-
   RTS
 .endproc
 
