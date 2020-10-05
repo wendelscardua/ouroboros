@@ -708,6 +708,7 @@ skip_display_best:
 .proc game_over
   JSR readjoy
   LDA pressed_buttons
+  AND #(BUTTON_START|BUTTON_A|BUTTON_B)
   BEQ :+
   JSR go_to_title
 :
