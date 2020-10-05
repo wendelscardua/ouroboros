@@ -785,13 +785,13 @@ no_right:
   STX worm_queue_head
 
 no_step:
-  JSR check_collisions
-
   LDA #0
   STA sprite_counter
 
   JSR render_worm
   JSR render_enemies
+
+  JSR check_collisions
 
   ; erase sprites
   LDX sprite_counter
@@ -960,7 +960,7 @@ loop:
 .proc render_large_clock
   LDA enemy_rho_queue, X
   STA sprite_rho
-  LDA enemy_theta_queue, X
+  LDA enemy_theta_queue, X  
   STA sprite_theta
   LDA #.lobyte(metasprite_4_data)
   STA sprite_ptr
@@ -973,6 +973,11 @@ loop:
 .proc render_hourglass
   LDA enemy_rho_queue, X
   STA sprite_rho
+  LDA nmis
+  AND #%1
+  BEQ :+
+  INC enemy_theta_queue, X
+:
   LDA enemy_theta_queue, X
   STA sprite_theta
   LDA nmis
@@ -1020,6 +1025,11 @@ frame_3:
 .proc render_virus
   LDA enemy_rho_queue, X
   STA sprite_rho
+  LDA nmis
+  AND #%1
+  BEQ :+
+  DEC enemy_theta_queue, X
+:
   LDA enemy_theta_queue, X
   STA sprite_theta
   LDA #.lobyte(metasprite_5_data)
@@ -1349,9 +1359,9 @@ enemy_renders_h: .hibytes enemy_renders
 time_delta_per_enemy:
   .byte  5 ; small clock
   .byte 10 ; large clock
-  .byte 30 ; hourglass
-  .byte 45 ; virus
-  .byte 60 ; anti worm
+  .byte 15 ; hourglass
+  .byte 30 ; virus
+  .byte 30 ; anti worm
 
 palettes:
 .incbin "../assets/bg-palettes.pal"
