@@ -1283,6 +1283,7 @@ less_than_15_seconds:
   LDA worm_theta_queue, Y
   CLC
   ADC #128
+  AND #%11111100
   STA enemy_theta_queue, X
 
   INX_MOD_16
