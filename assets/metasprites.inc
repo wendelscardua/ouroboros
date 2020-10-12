@@ -32,10 +32,10 @@ metasprite_3_data:
 
 metasprite_4_data:
 
-	.byte - 8,- 8,$34,1
-	.byte   0,- 8,$35,1
-	.byte - 8,  0,$44,1
-	.byte   0,  0,$45,1
+	.byte - 8,- 8,$34,3
+	.byte   0,- 8,$35,3
+	.byte - 8,  0,$44,3
+	.byte   0,  0,$45,3
 	.byte 128
 
 metasprite_5_data:
