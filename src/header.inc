@@ -5,7 +5,7 @@
 .byte $02        ; Number of 16KB PRG-ROM banks
 .byte $02        ; Number of 8KB CHR-ROM banks
 
-.byte %01000001  ; Flags 6
+.byte %01000000  ; Flags 6
 ;      ||||||||
 ;      |||||||+- Mirroring: 0: horizontal (vertical arrangement) (CIRAM A10 = PPU A11)
 ;      |||||||              1: vertical (horizontal arrangement) (CIRAM A10 = PPU A10)

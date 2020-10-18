@@ -109,6 +109,7 @@ SPAWN_PERIOD = 3 ; seconds
 MAX_ENEMIES = 15
 START_TIME = $0100
 COLLISION_THETA = 4
+SHAKE_DISTANCE = 3
 
 ; debug - macros for NintendulatorDX interaction
 .ifdef DEBUG
@@ -171,6 +172,8 @@ sprite_ptr: .res 2 ; metasprite pointer
 
 nmis: .res 1
 old_nmis: .res 1
+
+screen_shake: .res 1
 
 subsecond_counter: .res 1
 
@@ -334,8 +337,8 @@ clear_ram:
   INX
   BNE clear_ram
 
-  ; vertical mirroring (fix for everdrive)
-  LDA #%00000000
+  ; horizontal mirroring (fix for everdrive)
+  LDA #%00000001
   STA $a000
 
   SCREEN_ON
@@ -376,10 +379,7 @@ forever:
   JSR refresh_oam
   ; reset ppuaddr
   BIT PPUSTATUS
-  ; reset scroll
-  LDA #$00
-  STA PPUSCROLL
-  STA PPUSCROLL
+  JSR set_scroll
 
   ; new frame code
   JSR game_state_handler
@@ -399,6 +399,34 @@ etc:
   STA OAMADDR
   LDA #$02
   STA OAMDMA
+  RTS
+.endproc
+
+.proc set_scroll
+  LDA screen_shake
+  BEQ reset_scroll
+
+  DEC screen_shake
+  LDA screen_shake
+  AND #%1
+  BEQ left_shake
+
+  LDA #SHAKE_DISTANCE
+  STA PPUSCROLL
+  LDA #$00
+  STA PPUSCROLL
+  RTS
+left_shake:
+  LDA #-SHAKE_DISTANCE
+  STA PPUSCROLL
+  LDA #$00
+  STA PPUSCROLL
+  RTS
+  
+reset_scroll:
+  LDA #$00
+  LDA #$00
+  STA PPUSCROLL
   RTS
 .endproc
 
@@ -645,6 +673,7 @@ INITIAL_SIZE=4
   .endrepeat
 
   LDA #0
+  STA screen_shake
   STA temp_rho
   STA enemy_queue_head
   STA enemy_queue_tail
@@ -888,6 +917,10 @@ loop:
   LDA #0
   STA remaining_time
 no_carry:
+
+  ; shake screen
+  LDA #4
+  STA screen_shake
 
   ; delete enemy
   CPX enemy_queue_head
