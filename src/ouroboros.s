@@ -406,6 +406,7 @@ etc:
 .proc set_scroll
   LDA screen_shake
   BEQ reset_scroll
+  BMI reset_scroll
 
   DEC screen_shake
   LDA screen_shake
@@ -426,7 +427,7 @@ left_shake:
   
 reset_scroll:
   LDA #$00
-  LDA #$00
+  STA PPUSCROLL
   STA PPUSCROLL
   RTS
 .endproc
