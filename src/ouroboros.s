@@ -1310,8 +1310,16 @@ exit_loop:
   ; random enemy (0-3)
   ; TODO: include/implement anti worm
   JSR rand
-  AND #%11
-  STA enemy_type_queue, X
+  AND #%1111
+  LDY #0
+enemy_weight_loop:
+  SEC
+  SBC enemy_weights, Y
+  BMI exit_enemy_weight_loop
+  INY
+  JMP enemy_weight_loop
+exit_enemy_weight_loop:
+  STY enemy_type_queue, X
 
   ; random rho (0-3)
   LDY random_rho_buffer_index
@@ -1453,8 +1461,16 @@ time_delta_per_enemy:
   .byte  5 ; small clock
   .byte 10 ; large clock
   .byte 15 ; hourglass
-  .byte 30 ; virus
+  .byte 20 ; virus
   .byte 30 ; anti worm
+
+; must add up to 16
+enemy_weights:
+  .byte  7 ; small clock
+  .byte  5 ; large clock
+  .byte  3 ; hourglass
+  .byte  1 ; virus
+  .byte  0 ; anti worm
 
 palettes:
 .incbin "../assets/bg-palettes.pal"
