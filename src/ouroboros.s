@@ -874,18 +874,15 @@ loop:
   LDA time_delta_per_enemy, Y
   CLC
   ADC remaining_time
+  STA remaining_time
   CMP #60
   BCC no_carry
-  SEC
-  SBC #60
-  INC remaining_time+1
-  LDA remaining_time+1
-  CMP #3
-  BCC no_carry
-  LDA #3
+  ; caps time to 1:00
+  LDA #1
   STA remaining_time+1
-no_carry:
+  LDA #0
   STA remaining_time
+no_carry:
 
   ; delete enemy
   CPX enemy_queue_head
