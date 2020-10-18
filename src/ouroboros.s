@@ -178,6 +178,8 @@ sprite_counter: .res 1
 
 step_delay: .res 1
 step_counter: .res 1
+song_delay: .res 1
+song_counter: .res 1
 
 ; time = one byte for seconds, then one byte for minutes
 remaining_time: .res 2
@@ -382,33 +384,7 @@ forever:
   LDA #%00011110  ; no tint
   STA PPUMASK
 .endif
-  LDA game_state
-  CMP #game_states::playing
-  BNE update_music
-  LDA remaining_time+1
-  BEQ fast_music
-  LDA #%111
-  JMP delay_music
-fast_music:
-  LDA remaining_time
-  CMP #30
-  BCC faster_music
-  LDA #%11
-  JMP delay_music
-faster_music:
-  LDA remaining_time
-  CMP #15
-  BCC fastest_music
-  LDA #%1
-  JMP delay_music
-fastest_music:
-  LDA #%0
-delay_music:
-  AND nmis
-  BNE skip_music
-update_music:
-  JSR FamiToneUpdate
-skip_music:
+  JSR music_update
   JSR slow_updates
 etc:
   JMP forever
@@ -550,11 +526,28 @@ etc:
   RTS
 .endproc
 
+.proc music_update
+  LDA game_state
+  CMP #game_states::playing
+  BNE play_music ; play the usual way
+
+  DEC song_counter
+  BMI play_delayed
+  BEQ play_delayed
+  JMP skip_music
+play_delayed:
+  LDA song_delay
+  STA song_counter
+play_music:
+  JSR FamiToneUpdate
+skip_music:
+  RTS
+.endproc
+
 .proc slow_updates
   JSR rand
   RTS
 .endproc
-
 
 .proc go_to_title
   STA $e000
@@ -655,7 +648,10 @@ INITIAL_SIZE=4
   LDA #15
   STA step_counter
   STA step_delay
-
+  LDA #6
+  STA song_counter
+  STA song_delay
+  
   LDA #0
   STA subsecond_counter
   STA enemy_spawn_timer
@@ -1186,12 +1182,16 @@ no_enemy_spawn:
   BCC less_than_2_minutes
   LDA #10
   STA step_delay
+  LDA #6
+  STA song_delay
   RTS
 less_than_2_minutes:
   CMP #1
   BCC less_than_1_minute
   LDA #8
   STA step_delay
+  LDA #5
+  STA song_delay
   RTS
 less_than_1_minute:
   LDA remaining_time
@@ -1199,22 +1199,30 @@ less_than_1_minute:
   BCC less_than_45_seconds
   LDA #6
   STA step_delay
+  LDA #4
+  STA song_delay
   RTS
 less_than_45_seconds:
   CMP #30
   BCC less_than_30_seconds
   LDA #4
   STA step_delay
+  LDA #3
+  STA song_delay
   RTS
 less_than_30_seconds:
   CMP #15
   BCC less_than_15_seconds
   LDA #3
   STA step_delay
+  LDA #2
+  STA song_delay
   RTS
 less_than_15_seconds:
   LDA #2
   STA step_delay
+  LDA #1
+  STA song_delay
   RTS
 .endproc
 
