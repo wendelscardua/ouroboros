@@ -21,6 +21,7 @@ FT_DPCM_OFF=$c000
 .endenum
 
 .enum sfx
+  Collision
 .endenum
 
 .macro SFX effect, channel
@@ -906,6 +907,8 @@ loop:
   CMP #COLLISION_THETA
   BCS skip
 
+  ; collided
+
   LDY enemy_type_queue, X
   LDA time_delta_per_enemy, Y
   CLC
@@ -923,6 +926,9 @@ no_carry:
   ; shake screen
   LDA #SHAKE_COUNT
   STA screen_shake
+
+  ; sfx
+  SFX Collision, CH1
 
   ; delete enemy
   CPX enemy_queue_head
