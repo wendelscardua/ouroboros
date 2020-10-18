@@ -110,6 +110,7 @@ MAX_ENEMIES = 15
 START_TIME = $0100
 COLLISION_THETA = 4
 SHAKE_DISTANCE = 3
+SHAKE_COUNT = 10
 
 ; debug - macros for NintendulatorDX interaction
 .ifdef DEBUG
@@ -408,7 +409,7 @@ etc:
 
   DEC screen_shake
   LDA screen_shake
-  AND #%1
+  AND #%10
   BEQ left_shake
 
   LDA #SHAKE_DISTANCE
@@ -919,7 +920,7 @@ loop:
 no_carry:
 
   ; shake screen
-  LDA #4
+  LDA #SHAKE_COUNT
   STA screen_shake
 
   ; delete enemy
