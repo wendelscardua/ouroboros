@@ -909,6 +909,9 @@ loop:
 
   ; collided
 
+  ; add time, but cap at 1 minute
+  LDA remaining_time+1
+  BNE no_carry
   LDY enemy_type_queue, X
   LDA time_delta_per_enemy, Y
   CLC
@@ -916,7 +919,7 @@ loop:
   STA remaining_time
   CMP #60
   BCC no_carry
-  ; caps time to 1:00
+
   LDA #1
   STA remaining_time+1
   LDA #0
