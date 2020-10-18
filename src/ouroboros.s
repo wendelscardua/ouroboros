@@ -206,6 +206,9 @@ enemy_queue_head: .res 1
 enemy_queue_tail: .res 1
 enemy_spawn_timer: .res 1
 
+random_rho_buffer: .res 4
+random_rho_buffer_index: .res 1
+
 .enum enemy_types
   small_clock
   large_clock
@@ -657,6 +660,8 @@ INITIAL_SIZE=4
   STA enemy_spawn_timer
   STA elapsed_time
   STA elapsed_time+1
+
+  JSR fill_random_rho_buffer
 
   LDA #.lobyte(START_TIME)
   STA remaining_time
@@ -1268,6 +1273,37 @@ less_than_15_seconds:
   RTS
 .endproc
 
+.proc fill_random_rho_buffer
+  .repeat 4, i
+    LDA #i
+    STA random_rho_buffer+i
+  .endrepeat
+  LDA #0
+  STA random_rho_buffer_index
+
+  LDA #4
+  STA temp_x
+  LDX #3
+shuffle_loop:
+  JSR rand
+  AND #%11
+  CMP temp_x
+  BCS shuffle_loop
+  TAY
+  LDA random_rho_buffer, X
+  PHA
+  LDA random_rho_buffer, Y
+  STA random_rho_buffer, X
+  PLA
+  STA random_rho_buffer, Y
+  DEC temp_x
+  DEX
+  BEQ exit_loop
+  JMP shuffle_loop
+exit_loop:
+  RTS
+.endproc
+
 .proc spawn_enemy
   LDX enemy_queue_tail
 
@@ -1278,10 +1314,18 @@ less_than_15_seconds:
   STA enemy_type_queue, X
 
   ; random rho (0-3)
-  JSR rand
-  AND #%11
-
+  LDY random_rho_buffer_index
+  LDA random_rho_buffer, Y
   STA enemy_rho_queue, X
+
+  INC random_rho_buffer_index
+  LDA random_rho_buffer_index
+  CMP #4
+  BNE no_fill
+  save_regs
+  JSR fill_random_rho_buffer
+  restore_regs
+no_fill:
 
   ; spawn oposite of player
   LDY worm_queue_head
