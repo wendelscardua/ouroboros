@@ -1208,7 +1208,9 @@ no_game_over:
   ; enemy spawn
 
   INC enemy_spawn_timer
-  LDA enemy_spawn_timer
+  LDA rng_seed ; add some variation to spawn period
+  AND #%1
+  ADC enemy_spawn_timer
   CMP #SPAWN_PERIOD
   BCC no_enemy_spawn
   LDA #0
@@ -1381,7 +1383,6 @@ no_fill:
   LDA worm_theta_queue, Y
   CLC
   ADC #128
-  AND #%11111100
   STA enemy_theta_queue, X
 
   INX_MOD_16
