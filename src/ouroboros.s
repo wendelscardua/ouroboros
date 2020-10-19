@@ -379,12 +379,12 @@ forever:
   STA PPUMASK
 .endif
   JSR refresh_oam
-  ; reset ppuaddr
   BIT PPUSTATUS
   JSR set_scroll
-
   ; new frame code
   JSR game_state_handler
+  ; reset ppuaddr
+
 .ifdef DEBUG
   LDA #%00011110  ; no tint
   STA PPUMASK
@@ -807,7 +807,7 @@ skip_best_time_stuff:
 
 .proc playing
   JSR time_stuff
-
+  JSR display_timers
   JSR readjoy
 
   LDA pressed_buttons
@@ -1148,7 +1148,9 @@ frame_3:
   STA remaining_time
   DEC remaining_time+1
   BPL no_game_over
-
+  LDA #$00
+  STA remaining_time
+  STA remaining_time+1
   JSR go_to_game_over
   RTS
 no_game_over:
@@ -1161,6 +1163,30 @@ no_game_over:
   INC elapsed_time+1
 :
 
+  ; tweak speed depending on timer
+  JSR adjust_speed
+
+  ; enemy spawn
+
+  INC enemy_spawn_timer
+  LDA rng_seed ; add some variation to spawn period
+  AND #%1
+  ADC enemy_spawn_timer
+  CMP #SPAWN_PERIOD
+  BCC no_enemy_spawn
+  LDA #0
+  STA enemy_spawn_timer
+  JSR spawn_enemy
+no_enemy_spawn:
+
+  RTS
+.endproc
+
+.proc display_timers
+  LDA screen_shake
+  BEQ :+
+  RTS
+:
   ; display timers
 
   BIT PPUSTATUS
@@ -1204,23 +1230,6 @@ no_game_over:
   STA PPUADDR
   STA PPUSCROLL
   STA PPUSCROLL
-
-  ; tweak speed depending on timer
-  JSR adjust_speed
-
-  ; enemy spawn
-
-  INC enemy_spawn_timer
-  LDA rng_seed ; add some variation to spawn period
-  AND #%1
-  ADC enemy_spawn_timer
-  CMP #SPAWN_PERIOD
-  BCC no_enemy_spawn
-  LDA #0
-  STA enemy_spawn_timer
-  JSR spawn_enemy
-no_enemy_spawn:
-
   RTS
 .endproc
 
